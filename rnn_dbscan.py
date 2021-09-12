@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.neighbors import NearestNeighbors
 from scipy.spatial.distance import pdist, euclidean
 
+from profiling import profile_decorator, ProfilingContext
+
 # enumerate rnn
 def enum_rnn(X_indices: np.ndarray, x_indice: int) -> np.array:
     rnn_indices = np.where(np.any(np.array(X_indices) == x_indice, axis=1))[0]
@@ -34,6 +36,7 @@ class RNN_DBSCAN:
 
         self.assign = np.zeros(len(self.X), dtype=np.dtype('int32'))
 
+    @profile_decorator
     def rnn_dbscan(self) -> np.array:
         """
         Algorithme principal pour assigner une classe aux objets du dataset `X`
@@ -52,6 +55,7 @@ class RNN_DBSCAN:
         self.expand_clusters()
         return self.assign
 
+    @profile_decorator
     def expand_cluster(self, x_indice: int, cluster: int) -> bool:
         """
         Permet de créer un nouveau groupe autour de l'objet `x` si |Rk(x)| >= k
@@ -88,6 +92,7 @@ class RNN_DBSCAN:
                             self.assign[z_indice] = cluster
             return True
 
+    @profile_decorator
     def neighborhood(self, x_indice: int) -> np.array:
         """
         Retourne l'ensemble des k voisins de `x` 
@@ -104,6 +109,7 @@ class RNN_DBSCAN:
         rNN_x = rNN_x[self.size_Rk[rNN_x] >= self.k]
         return np.unique(np.concatenate((self.indices[x_indice][1:], rNN_x), axis=None))
 
+    @profile_decorator
     def expand_clusters(self):
         """
         Étend les groupes.
@@ -141,3 +147,10 @@ if __name__ == "__main__":
     # TODO bcp d'anomalie en faisant varier k ? groupe cohérent ? quelles sont les limites de la méthodes ?
     # c'est long l'étape `expand_clusters` ? à évaluer
     print(np.unique(labels, return_counts =True))
+    
+    ProfilingContext.print_summary()
+    # (array([-1,  1,  2,  3]), array([   1, 8979,   20, 1000], dtype=int64))
+    # neighborhood: 9.9795e-04s avg for 5710 calls, total -> 5.6983e+00
+    # expand_cluster: 3.7333e-02s avg for 159 calls, total -> 5.9360e+00
+    # expand_clusters: 2.2228e+03s avg for 1 calls
+    # rnn_dbscan: 2.2287e+03s avg for 1 calls
