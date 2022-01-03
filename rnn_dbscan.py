@@ -12,12 +12,12 @@ def enum_rnn(X_indices: np.ndarray, x_indice: int) -> np.array:
 def rnn_size(rnn_indices):
     return np.bincount(rnn_indices.flatten(), minlength=rnn_indices.shape[0])
 
-def density_cluster(cluster):
-    return max(pdist(cluster))
+def density_cluster(cluster, metric = 'euclidean'):
+    return max(pdist(cluster, metric = metric))
 
 class RNN_DBSCAN:
 
-    def __init__(self, X: np.ndarray, k: int = 10):
+    def __init__(self, X: np.ndarray, k: int = 10, metric = 'euclidean'):
         """
         Init RNN-DBSCAN
 
@@ -28,13 +28,21 @@ class RNN_DBSCAN:
         """
         self.X = X
         self.k = k
+        
+        self.metric = metric
+        if metric == 'euclidean':
+            self.metric_function = euclidean
+        else:
+            self.metric_function = metric
 
         # voisinage 
-        nbrs = NearestNeighbors(n_neighbors=self.k, algorithm='ball_tree').fit(self.X)
+        nbrs = NearestNeighbors(n_neighbors=self.k, algorithm='ball_tree', 
+                                metric=metric).fit(self.X)
         self.indices = nbrs.kneighbors(self.X, return_distance=False)
         self.size_Rk = rnn_size(self.indices)
 
         self.assign = np.zeros(len(self.X), dtype=np.dtype('int32'))
+        
 
     @profile_decorator
     def rnn_dbscan(self) -> np.array:
@@ -128,7 +136,7 @@ class RNN_DBSCAN:
                     cluster_num = self.assign[n_indice]
                     cluster = self.X[np.where(self.assign == cluster_num)]
                     d = euclidean(x, n)
-                    if self.size_Rk[n_indice] >= self.k and d <= density_cluster(cluster) and d < mindist:
+                    if self.size_Rk[n_indice] >= self.k and d <= density_cluster(cluster, metric=self.metric) and d < mindist:
                         mincluster = cluster_num
                         mindist = d
                 self.assign[x_indice] = mincluster
@@ -136,10 +144,10 @@ class RNN_DBSCAN:
 if __name__ == "__main__":
 
     # paramètre
-    k = 20
+    k = 2
     # dataset
-    dataset = np.concatenate((np.random.normal(loc=0.0, scale=1.0, size=(9_000, 2)), 
-                              np.random.normal(loc=6.0, scale=1.0, size=(1_000, 2))), axis=0)
+    dataset = np.concatenate((np.random.normal(loc=0.0, scale=1.0, size=(9_0, 2_0)), 
+                              np.random.normal(loc=6.0, scale=1.0, size=(1_0, 2_0))), axis=0)
     my_clustering = RNN_DBSCAN(X=dataset, k=k)
     
     labels = my_clustering.rnn_dbscan()
@@ -148,6 +156,7 @@ if __name__ == "__main__":
     # c'est long l'étape `expand_clusters` ? à évaluer
     print(np.unique(labels, return_counts =True))
     
+    print("---")
     ProfilingContext.print_summary()
     # (array([-1,  1,  2,  3]), array([   1, 8979,   20, 1000], dtype=int64))
     # neighborhood: 9.9795e-04s avg for 5710 calls, total -> 5.6983e+00
