@@ -141,25 +141,3 @@ class RNN_DBSCAN:
                         mindist = d
                 self.assign[x_indice] = mincluster
     
-if __name__ == "__main__":
-
-    # paramètre
-    k = 2
-    # dataset
-    dataset = np.concatenate((np.random.normal(loc=0.0, scale=1.0, size=(9_0, 2_0)), 
-                              np.random.normal(loc=6.0, scale=1.0, size=(1_0, 2_0))), axis=0)
-    my_clustering = RNN_DBSCAN(X=dataset, k=k)
-    
-    labels = my_clustering.rnn_dbscan()
-
-    # TODO bcp d'anomalie en faisant varier k ? groupe cohérent ? quelles sont les limites de la méthodes ?
-    # c'est long l'étape `expand_clusters` ? à évaluer
-    print(np.unique(labels, return_counts =True))
-    
-    print("---")
-    ProfilingContext.print_summary()
-    # (array([-1,  1,  2,  3]), array([   1, 8979,   20, 1000], dtype=int64))
-    # neighborhood: 9.9795e-04s avg for 5710 calls, total -> 5.6983e+00
-    # expand_cluster: 3.7333e-02s avg for 159 calls, total -> 5.9360e+00
-    # expand_clusters: 2.2228e+03s avg for 1 calls
-    # rnn_dbscan: 2.2287e+03s avg for 1 calls
